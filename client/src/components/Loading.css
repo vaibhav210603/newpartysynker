@@ -1,0 +1,25 @@
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: 60px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  -webkit-mask:linear-gradient(0deg,#000 55%,#0000 0) bottom/100% 18.18%;
+  background:
+   linear-gradient(#f03355 0 0) bottom/100% 0% no-repeat
+   #ddd;
+  animation: l8 2s infinite steps(7);
+}
+@keyframes l8 {
+    100% {background-size:100% 115%}
+}
+  .container{
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0,0,0,0.9);
+    display: flex;
+    position: fixed;
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+
+  }

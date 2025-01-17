@@ -1,0 +1,57 @@
+/* MainComponent.css */
+body, html, #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-image: url('./../../public/space2.jpg');
+    background-size:cover;
+  }
+  
+  .main-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  
+  }
+  
+  .canvas-container {
+    position: absolute;
+    top: 0;
+    left: 30%; /* Adjust this value to shift the model right */
+    width: 80%; /* Adjust width to ensure it fits in the view */
+    height: 100%;
+    z-index: 0;
+  }
+  
+  .player-container {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: transparent;
+    color: rgb(255, 253, 253);
+    border: 1px solid black;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+  
+    /* Optional: Set initial styles for text and background */
+  }
+  
+  button:hover {
+    background-color: red; /* Red background on hover */
+    color: white; /* White text on hover */
+  }
+  
