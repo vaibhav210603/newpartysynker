@@ -1,3 +1,9 @@
-Please read the Blueprint_partysynker.pdf for an idea of the project.
+Demo video : https://www.youtube.com/watch?v=4rYovROS0ig
 
-A short visual documentation/representation of the project. Hope you enjoy !😁
+Please read the Blueprint_partysynker.pdf for a brief idea of the project.
+
+Refer to PartySynker.docx for complete research on the project including a flow diagram,performance analysis, mistakes and different approaches followed.
+
+
+
+
