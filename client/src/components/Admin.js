@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import './admin.css';
 import io from 'socket.io-client';
+import { SERVER_URL } from '../config';
 
-const socket = io('http://localhost:5000/');
+const socket = io(SERVER_URL);
 
 export default function Admin() {
   const [flag, setFlag] = useState(false);

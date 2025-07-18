@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Player.css';
 import io from 'socket.io-client';
+import { SERVER_URL } from '../config';
 
-// Get server URL from environment variable or use default
-const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000';
 const socket = io(SERVER_URL, {
   reconnection: true,
   reconnectionAttempts: 5,
