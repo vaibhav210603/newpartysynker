@@ -27,9 +27,12 @@ const Player = () => {
   const playTimeout = useRef(null);
   const audioContext = useRef(null);
   const audioSource = useRef(null);
-  const MAX_CALIBRATION_SAMPLES = 5;
+  const MAX_CALIBRATION_SAMPLES = 3; // Reduced from 5 to 3
   const CALIBRATION_TIMEOUT = 10000; // 10 seconds timeout
   const SAMPLE_INTERVAL = 1000; // 1 second between samples
+  // Calibration queue logic
+  const calibrationQueue = useRef([]);
+  const isCalibratingGlobal = useRef(false);
 
   // Initialize audio context
   useEffect(() => {
@@ -89,39 +92,45 @@ const Player = () => {
     };
   }, []);
 
+  // Modified calibrateTime to support queue
   const calibrateTime = () => {
+    // If another calibration is in progress, queue this calibration
+    if (isCalibratingGlobal.current) {
+      calibrationQueue.current.push(() => calibrateTime());
+      return;
+    }
+    isCalibratingGlobal.current = true;
     // Clear any existing calibration
     if (calibrationTimeout.current) {
       clearTimeout(calibrationTimeout.current);
     }
     calibrationSamples.current = [];
     setIsCalibrating(true);
-    
     // Set a timeout to prevent infinite calibration
     calibrationTimeout.current = setTimeout(() => {
       if (isCalibrating) {
-        console.log('Calibration timed out');
         setIsCalibrating(false);
+        isCalibratingGlobal.current = false;
         // Use the last known offset or default to 0
         if (calibrationSamples.current.length > 0) {
           const avgOffset = calibrationSamples.current.reduce((a, b) => a + b, 0) / calibrationSamples.current.length;
           setServerTimeOffset(avgOffset);
-          console.log(`Using partial calibration. Average offset: ${avgOffset}ms`);
+        }
+        // Start next in queue if any
+        if (calibrationQueue.current.length > 0) {
+          const next = calibrationQueue.current.shift();
+          setTimeout(next, 500); // Small delay between calibrations
         }
       }
     }, CALIBRATION_TIMEOUT);
-
     // Function to take a single sample
     const takeSample = () => {
       if (calibrationSamples.current.length < MAX_CALIBRATION_SAMPLES) {
-        console.log(`Taking calibration sample ${calibrationSamples.current.length + 1}`);
         socket.emit('request_current_server_time');
       }
     };
-
     // Take first sample immediately
     takeSample();
-
     // Schedule remaining samples
     const sampleInterval = setInterval(() => {
       if (calibrationSamples.current.length < MAX_CALIBRATION_SAMPLES) {
@@ -130,7 +139,6 @@ const Player = () => {
         clearInterval(sampleInterval);
       }
     }, SAMPLE_INTERVAL);
-
     // Clean up interval if component unmounts during calibration
     return () => clearInterval(sampleInterval);
   };
@@ -138,30 +146,27 @@ const Player = () => {
   useEffect(() => {
     const handleTimeResponse = (serverTime) => {
       if (!isCalibrating) return;
-
       const clientTime = Date.now();
       const roundTripTime = clientTime - serverTime;
-      const offset = roundTripTime / 2; // Approximate one-way latency
-      
-      console.log(`Received time response - Server: ${serverTime}, Client: ${clientTime}, Offset: ${offset}ms`);
-      
+      const offset = roundTripTime / 2;
       calibrationSamples.current.push(offset);
-      console.log(`Calibration sample ${calibrationSamples.current.length}: offset = ${offset}ms`);
-      
       // If we have enough samples, complete calibration
       if (calibrationSamples.current.length >= MAX_CALIBRATION_SAMPLES) {
         const avgOffset = calibrationSamples.current.reduce((a, b) => a + b, 0) / MAX_CALIBRATION_SAMPLES;
         setServerTimeOffset(avgOffset);
         setIsCalibrating(false);
+        isCalibratingGlobal.current = false;
         if (calibrationTimeout.current) {
           clearTimeout(calibrationTimeout.current);
         }
-        console.log(`Calibration complete. Average offset: ${avgOffset}ms`);
+        // Start next in queue if any
+        if (calibrationQueue.current.length > 0) {
+          const next = calibrationQueue.current.shift();
+          setTimeout(next, 500); // Small delay between calibrations
+        }
       }
     };
-
     socket.on('current_time_server', handleTimeResponse);
-
     return () => {
       socket.off('current_time_server', handleTimeResponse);
       if (calibrationTimeout.current) {
@@ -306,6 +311,17 @@ const Player = () => {
     }
   };
 
+  // Automatically calibrate time on component mount
+  useEffect(() => {
+    calibrateTime();
+    // Clean up calibration interval if component unmounts
+    return () => {
+      if (calibrationTimeout.current) {
+        clearTimeout(calibrationTimeout.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="player-container">
       <div className='text'>
@@ -332,13 +348,19 @@ const Player = () => {
           PLAY IN SYNC
         </button>
       )}
-      <button 
-        className='button' 
-        onClick={calibrateTime} 
-        disabled={isCalibrating || connectionStatus !== 'connected'}
-        style={{ opacity: isCalibrating ? 0.7 : 1 }}
+      {/* Calibration status button */}
+      <button
+        className='button'
+        style={{
+          backgroundColor: !isCalibrating ? 'green' : 'gray',
+          color: 'white',
+          cursor: 'default',
+          opacity: 1,
+          pointerEvents: 'none',
+        }}
+        disabled
       >
-        {isCalibrating ? `CALIBRATING (${calibrationSamples.current.length}/${MAX_CALIBRATION_SAMPLES})` : 'CALIBRATE'}
+        {!isCalibrating ? 'CALIBRATED' : 'CALIBRATING...'}
       </button>
     </div>
   );
